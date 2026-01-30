@@ -123,8 +123,9 @@ NGROK_PIDS="$NGROK_FRONTEND_PID $NGROK_BACKEND_PID"
 echo "   等待 ngrok 启动..."
 sleep 3
 
-# 获取 ngrok URL
+# 获取 ngrok URL（从两个可能的 API 端口）
 for i in {1..15}; do
+    # 尝试从 4040 和 4041 端口获取隧道信息
     FRONTEND_URL=$(curl -s http://127.0.0.1:4040/api/tunnels 2>/dev/null | python3 -c "
 import sys, json
 try:
@@ -136,7 +137,7 @@ try:
 except: pass
 " 2>/dev/null || echo "")
 
-    BACKEND_URL=$(curl -s http://127.0.0.1:4040/api/tunnels 2>/dev/null | python3 -c "
+    BACKEND_URL=$(curl -s http://127.0.0.1:4041/api/tunnels 2>/dev/null | python3 -c "
 import sys, json
 try:
     data = json.load(sys.stdin)
