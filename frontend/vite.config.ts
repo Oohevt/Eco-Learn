@@ -8,5 +8,8 @@ export default defineConfig({
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url))
     }
+  },
+  server: {
+    allowedHosts: ['66e737acef9c.ngrok-free.app']
   }
 })

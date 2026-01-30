@@ -417,7 +417,7 @@ async function handleRequest(request, env, context) {
     }
 
     // API 信息
-    if (path === '/api') {
+    if (path === '/') {
       return new Response(JSON.stringify({
         message: 'EconoLearn API',
         version: '1.0.0',
@@ -440,7 +440,7 @@ async function handleRequest(request, env, context) {
     }
 
     // 章节相关
-    if (path === '/api/chapters/stats' && request.method === 'GET') {
+    if (path === '/chapters/stats' && request.method === 'GET') {
       // 检查是否有 KV 存储
       if (!env.KV) {
         return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
@@ -452,7 +452,7 @@ async function handleRequest(request, env, context) {
       })
     }
 
-    if (path === '/api/chapters' && request.method === 'GET') {
+    if (path === '/chapters' && request.method === 'GET') {
       // 检查是否有 KV 存储
       if (!env.KV) {
         return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
@@ -471,7 +471,7 @@ async function handleRequest(request, env, context) {
       })
     }
 
-    if (path.startsWith('/api/chapters/') && request.method === 'GET') {
+    if (path.startsWith('/chapters/') && request.method === 'GET') {
       // 检查是否有 KV 存储
       if (!env.KV) {
         return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
@@ -490,7 +490,7 @@ async function handleRequest(request, env, context) {
     }
 
     // 认证相关
-    if (path === '/api/auth/register' && request.method === 'POST') {
+    if (path === '/auth/register' && request.method === 'POST') {
       // 检查是否有 KV 存储
       if (!env.KV) {
         return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
@@ -519,7 +519,7 @@ async function handleRequest(request, env, context) {
       })
     }
 
-    if (path === '/api/auth/login' && request.method === 'POST') {
+    if (path === '/auth/login' && request.method === 'POST') {
       // 检查是否有 KV 存储
       if (!env.KV) {
         return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
@@ -556,7 +556,7 @@ async function handleRequest(request, env, context) {
       })
     }
 
-    if (path === '/api/auth/me' && request.method === 'GET') {
+    if (path === '/auth/me' && request.method === 'GET') {
       const authHeader = request.headers.get('Authorization')
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return new Response(JSON.stringify({ error: '未授权' }), { status: 401 })
@@ -591,7 +591,7 @@ async function handleRequest(request, env, context) {
     }
 
     // 进度相关
-    if (path === '/api/user/progress' && request.method === 'GET') {
+    if (path === '/user/progress' && request.method === 'GET') {
       const authHeader = request.headers.get('Authorization')
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return new Response(JSON.stringify({ error: '未授权' }), { status: 401 })
@@ -616,7 +616,7 @@ async function handleRequest(request, env, context) {
       })
     }
 
-    if (path === '/api/user/progress' && request.method === 'POST') {
+    if (path === '/user/progress' && request.method === 'POST') {
       const authHeader = request.headers.get('Authorization')
       if (!authHeader || !authHeader.startsWith('Bearer ')) {
         return new Response(JSON.stringify({ error: '未授权' }), { status: 401 })

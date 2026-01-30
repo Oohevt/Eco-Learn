@@ -38,16 +38,14 @@ api.interceptors.response.use(
 )
 
 export interface User {
-  id: number
+  id: string
   username: string
   email: string
-  is_active: boolean
   is_admin: boolean
 }
 
 export interface LoginResponse {
   access_token: string
-  token_type: string
   user: User
 }
 
@@ -66,17 +64,11 @@ export const authApi = {
     }),
 
   // 登录
-  login: (username: string, password: string) => {
-    const formData = new FormData()
-    formData.append('username', username)
-    formData.append('password', password)
-
-    return axios.post<LoginResponse>(`${API_BASE_URL}/auth/login`, formData, {
-      headers: {
-        'Content-Type': 'multipart/form-data'
-      }
-    })
-  },
+  login: (username: string, password: string) =>
+    api.post<LoginResponse>('/auth/login', {
+      username,
+      password
+    }),
 
   // 获取当前用户信息
   getCurrentUser: () =>
