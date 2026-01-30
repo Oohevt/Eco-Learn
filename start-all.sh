@@ -108,9 +108,16 @@ else
     NGROK_CMD="$SCRIPT_DIR/ngrok"
 fi
 
-# 启动 ngrok（多隧道模式）
-$NGROK_CMD start --all --config="$SCRIPT_DIR/ngrok.yml" > "$SCRIPT_DIR/.ngrok.log" 2>&1 &
-NGROK_PID=$!
+# ngrok 3.x 使用单独的命令启动隧道
+# 启动前端隧道
+$NGROK_CMD http 5173 --log=stdout > "$SCRIPT_DIR/.ngrok-frontend.log" 2>&1 &
+NGROK_FRONTEND_PID=$!
+
+# 启动后端隧道
+$NGROK_CMD http 8787 --log=stdout > "$SCRIPT_DIR/.ngrok-backend.log" 2>&1 &
+NGROK_BACKEND_PID=$!
+
+NGROK_PIDS="$NGROK_FRONTEND_PID $NGROK_BACKEND_PID"
 
 # 等待 ngrok 启动
 echo "   等待 ngrok 启动..."
@@ -144,7 +151,7 @@ except: pass
         break
     fi
     if [ $i -eq 15 ]; then
-        echo -e "   ${YELLOW}⚠${NC} ngrok 启动超时，请检查日志: $SCRIPT_DIR/.ngrok.log"
+        echo -e "   ${YELLOW}⚠${NC} ngrok 启动超时，请检查日志: $SCRIPT_DIR/.ngrok-frontend.log"
         break
     fi
     sleep 1
@@ -185,8 +192,9 @@ echo ""
 cleanup() {
     echo ""
     echo "🛑 停止服务..."
-    kill $BACKEND_PID $FRONTEND_PID $NGROK_PID 2>/dev/null
-    rm -f "$SCRIPT_DIR/.backend.log" "$SCRIPT_DIR/.frontend.log" "$SCRIPT_DIR/.ngrok.log"
+    kill $BACKEND_PID $FRONTEND_PID $NGROK_PIDS 2>/dev/null
+    rm -f "$SCRIPT_DIR/.backend.log" "$SCRIPT_DIR/.frontend.log"
+    rm -f "$SCRIPT_DIR/.ngrok-frontend.log" "$SCRIPT_DIR/.ngrok-backend.log"
     exit 0
 }
 
