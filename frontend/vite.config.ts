@@ -10,6 +10,8 @@ export default defineConfig({
     }
   },
   server: {
-    allowedHosts: ['66e737acef9c.ngrok-free.app']
+    allowedHosts: false,  // 完全禁用主机检查
+    strictPort: true,
+    host: true
   }
 })
