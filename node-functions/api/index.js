@@ -404,259 +404,277 @@ async function initData(kv) {
 // 主处理函数
 const JWT_SECRET = process.env.JWT_SECRET || 'econolearn-jwt-secret-key-2024-production-secure'
 
-export default {
-  async fetch(request, env, context) {
-    try {
-      const url = new URL(request.url)
-      const path = url.pathname
+async function handleRequest(request, env, context) {
+  try {
+    const url = new URL(request.url)
+    const path = url.pathname
 
-      // 健康检查
-      if (path === '/health') {
-        return new Response(JSON.stringify({ status: 'healthy' }), {
-          headers: { 'Content-Type': 'application/json' }
-        })
+    // 健康检查
+    if (path === '/health') {
+      return new Response(JSON.stringify({ status: 'healthy' }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
+    // API 信息
+    if (path === '/api') {
+      return new Response(JSON.stringify({
+        message: 'EconoLearn API',
+        version: '1.0.0',
+        docs: '/docs'
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
+    // 初始化数据
+    if (path === '/init-data' && request.method === 'POST') {
+      // 检查是否有 KV 存储
+      if (!env.KV) {
+        return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
+      }
+      await initData(env.KV)
+      return new Response(JSON.stringify({ message: '数据初始化完成', success: true }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
+    // 章节相关
+    if (path === '/api/chapters/stats' && request.method === 'GET') {
+      // 检查是否有 KV 存储
+      if (!env.KV) {
+        return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
+      }
+      const store = new KVStore(env.KV)
+      const stats = await store.getCategoryStats()
+      return new Response(JSON.stringify(stats), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
+    if (path === '/api/chapters' && request.method === 'GET') {
+      // 检查是否有 KV 存储
+      if (!env.KV) {
+        return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
+      }
+      const store = new KVStore(env.KV)
+      const category = url.searchParams.get('category')
+      const page = parseInt(url.searchParams.get('page') || '1')
+      const pageSize = Math.min(parseInt(url.searchParams.get('page_size') || '50'), 100)
+
+      const allChapters = await store.listChapters(category || undefined, true)
+      const total = allChapters.length
+      const items = allChapters.slice((page - 1) * pageSize, page * pageSize)
+
+      return new Response(JSON.stringify({ items, total, page, page_size: pageSize }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
+    if (path.startsWith('/api/chapters/') && request.method === 'GET') {
+      // 检查是否有 KV 存储
+      if (!env.KV) {
+        return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
+      }
+      const store = new KVStore(env.KV)
+      const chapterId = path.split('/').pop()
+      const chapter = await store.getChapterByChapterId(chapterId)
+
+      if (!chapter) {
+        return new Response(JSON.stringify({ error: '章节不存在' }), { status: 404 })
       }
 
-      // API 信息
-      if (path === '/api') {
-        return new Response(JSON.stringify({
-          message: 'EconoLearn API',
-          version: '1.0.0',
-          docs: '/docs'
-        }), {
-          headers: { 'Content-Type': 'application/json' }
-        })
+      return new Response(JSON.stringify(chapter), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
+    // 认证相关
+    if (path === '/api/auth/register' && request.method === 'POST') {
+      // 检查是否有 KV 存储
+      if (!env.KV) {
+        return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
+      }
+      const store = new KVStore(env.KV)
+      const { username, email, password } = await request.json()
+
+      if (!username || !email || !password) {
+        return new Response(JSON.stringify({ error: '请提供用户名、邮箱和密码' }), { status: 400 })
       }
 
-      // 初始化数据
-      if (path === '/init-data' && request.method === 'POST') {
-        // 检查是否有 KV 存储
-        if (!env.KV) {
-          return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
-        }
-        await initData(env.KV)
-        return new Response(JSON.stringify({ message: '数据初始化完成', success: true }), {
-          headers: { 'Content-Type': 'application/json' }
-        })
+      const existing = await store.getUserByUsername(username) || await store.getUserByEmail(email)
+      if (existing) {
+        return new Response(JSON.stringify({ error: '用户名或邮箱已存在' }), { status: 400 })
       }
 
-      // 章节相关
-      if (path === '/api/chapters/stats' && request.method === 'GET') {
-        // 检查是否有 KV 存储
-        if (!env.KV) {
-          return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
-        }
-        const store = new KVStore(env.KV)
-        const stats = await store.getCategoryStats()
-        return new Response(JSON.stringify(stats), {
-          headers: { 'Content-Type': 'application/json' }
-        })
+      const passwordHash = await hashPassword(password)
+      const user = await store.createUser(username, email, passwordHash)
+
+      return new Response(JSON.stringify({
+        message: `用户 ${user.username} 注册成功`,
+        success: true
+      }), {
+        status: 201,
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
+    if (path === '/api/auth/login' && request.method === 'POST') {
+      // 检查是否有 KV 存储
+      if (!env.KV) {
+        return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
+      }
+      const store = new KVStore(env.KV)
+      const { username, password } = await request.json()
+
+      if (!username || !password) {
+        return new Response(JSON.stringify({ error: '请提供用户名和密码' }), { status: 400 })
       }
 
-      if (path === '/api/chapters' && request.method === 'GET') {
-        // 检查是否有 KV 存储
-        if (!env.KV) {
-          return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
-        }
-        const store = new KVStore(env.KV)
-        const category = url.searchParams.get('category')
-        const page = parseInt(url.searchParams.get('page') || '1')
-        const pageSize = Math.min(parseInt(url.searchParams.get('page_size') || '50'), 100)
-
-        const allChapters = await store.listChapters(category || undefined, true)
-        const total = allChapters.length
-        const items = allChapters.slice((page - 1) * pageSize, page * pageSize)
-
-        return new Response(JSON.stringify({ items, total, page, page_size: pageSize }), {
-          headers: { 'Content-Type': 'application/json' }
-        })
+      const user = await store.getUserByUsername(username)
+      if (!user) {
+        return new Response(JSON.stringify({ error: '用户名或密码错误' }), { status: 401 })
       }
 
-      if (path.startsWith('/api/chapters/') && request.method === 'GET') {
-        // 检查是否有 KV 存储
-        if (!env.KV) {
-          return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
-        }
-        const store = new KVStore(env.KV)
-        const chapterId = path.split('/').pop()
-        const chapter = await store.getChapterByChapterId(chapterId)
-
-        if (!chapter) {
-          return new Response(JSON.stringify({ error: '章节不存在' }), { status: 404 })
-        }
-
-        return new Response(JSON.stringify(chapter), {
-          headers: { 'Content-Type': 'application/json' }
-        })
+      const valid = await verifyPassword(password, user.password_hash)
+      if (!valid) {
+        return new Response(JSON.stringify({ error: '用户名或密码错误' }), { status: 401 })
       }
 
-      // 认证相关
-      if (path === '/api/auth/register' && request.method === 'POST') {
-        // 检查是否有 KV 存储
-        if (!env.KV) {
-          return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
-        }
-        const store = new KVStore(env.KV)
-        const { username, email, password } = await request.json()
+      const token = await createToken(user.id, JWT_SECRET)
 
-        if (!username || !email || !password) {
-          return new Response(JSON.stringify({ error: '请提供用户名、邮箱和密码' }), { status: 400 })
-        }
-
-        const existing = await store.getUserByUsername(username) || await store.getUserByEmail(email)
-        if (existing) {
-          return new Response(JSON.stringify({ error: '用户名或邮箱已存在' }), { status: 400 })
-        }
-
-        const passwordHash = await hashPassword(password)
-        const user = await store.createUser(username, email, passwordHash)
-
-        return new Response(JSON.stringify({
-          message: `用户 ${user.username} 注册成功`,
-          success: true
-        }), {
-          status: 201,
-          headers: { 'Content-Type': 'application/json' }
-        })
-      }
-
-      if (path === '/api/auth/login' && request.method === 'POST') {
-        // 检查是否有 KV 存储
-        if (!env.KV) {
-          return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
-        }
-        const store = new KVStore(env.KV)
-        const { username, password } = await request.json()
-
-        if (!username || !password) {
-          return new Response(JSON.stringify({ error: '请提供用户名和密码' }), { status: 400 })
-        }
-
-        const user = await store.getUserByUsername(username)
-        if (!user) {
-          return new Response(JSON.stringify({ error: '用户名或密码错误' }), { status: 401 })
-        }
-
-        const valid = await verifyPassword(password, user.password_hash)
-        if (!valid) {
-          return new Response(JSON.stringify({ error: '用户名或密码错误' }), { status: 401 })
-        }
-
-        const token = await createToken(user.id, JWT_SECRET)
-
-        return new Response(JSON.stringify({
-          access_token: token,
-          user: {
-            id: user.id,
-            username: user.username,
-            email: user.email,
-            is_admin: user.is_admin
-          }
-        }), {
-          headers: { 'Content-Type': 'application/json' }
-        })
-      }
-
-      if (path === '/api/auth/me' && request.method === 'GET') {
-        const authHeader = request.headers.get('Authorization')
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-          return new Response(JSON.stringify({ error: '未授权' }), { status: 401 })
-        }
-
-        const token = authHeader.substring(7)
-        const payload = await verifyToken(token, JWT_SECRET)
-
-        if (!payload) {
-          return new Response(JSON.stringify({ error: 'Token 无效' }), { status: 401 })
-        }
-
-        // 检查是否有 KV 存储
-        if (!env.KV) {
-          return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
-        }
-        const store = new KVStore(env.KV)
-        const user = await store.getUserById(payload.sub)
-
-        if (!user) {
-          return new Response(JSON.stringify({ error: '用户不存在' }), { status: 404 })
-        }
-
-        return new Response(JSON.stringify({
+      return new Response(JSON.stringify({
+        access_token: token,
+        user: {
           id: user.id,
           username: user.username,
           email: user.email,
           is_admin: user.is_admin
-        }), {
-          headers: { 'Content-Type': 'application/json' }
-        })
-      }
-
-      // 进度相关
-      if (path === '/api/user/progress' && request.method === 'GET') {
-        const authHeader = request.headers.get('Authorization')
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-          return new Response(JSON.stringify({ error: '未授权' }), { status: 401 })
         }
-
-        const token = authHeader.substring(7)
-        const payload = await verifyToken(token, JWT_SECRET)
-
-        if (!payload) {
-          return new Response(JSON.stringify({ error: 'Token 无效' }), { status: 401 })
-        }
-
-        // 检查是否有 KV 存储
-        if (!env.KV) {
-          return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
-        }
-        const store = new KVStore(env.KV)
-        const progress = await store.getUserProgress(payload.sub)
-
-        return new Response(JSON.stringify(progress), {
-          headers: { 'Content-Type': 'application/json' }
-        })
-      }
-
-      if (path === '/api/user/progress' && request.method === 'POST') {
-        const authHeader = request.headers.get('Authorization')
-        if (!authHeader || !authHeader.startsWith('Bearer ')) {
-          return new Response(JSON.stringify({ error: '未授权' }), { status: 401 })
-        }
-
-        const token = authHeader.substring(7)
-        const payload = await verifyToken(token, JWT_SECRET)
-
-        if (!payload) {
-          return new Response(JSON.stringify({ error: 'Token 无效' }), { status: 401 })
-        }
-
-        // 检查是否有 KV 存储
-        if (!env.KV) {
-          return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
-        }
-
-        const body = await request.json()
-        const { chapter_id, completed, score } = body
-
-        const store = new KVStore(env.KV)
-        const progress = await store.updateProgress(payload.sub, chapter_id, {
-          completed,
-          score
-        })
-
-        return new Response(JSON.stringify(progress), {
-          headers: { 'Content-Type': 'application/json' }
-        })
-      }
-
-      // 404
-      return new Response('Not Found', { status: 404 })
-    } catch (error) {
-      console.error('Error:', error)
-      return new Response(JSON.stringify({ error: error.message }), {
-        status: 500,
+      }), {
         headers: { 'Content-Type': 'application/json' }
       })
     }
+
+    if (path === '/api/auth/me' && request.method === 'GET') {
+      const authHeader = request.headers.get('Authorization')
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: '未授权' }), { status: 401 })
+      }
+
+      const token = authHeader.substring(7)
+      const payload = await verifyToken(token, JWT_SECRET)
+
+      if (!payload) {
+        return new Response(JSON.stringify({ error: 'Token 无效' }), { status: 401 })
+      }
+
+      // 检查是否有 KV 存储
+      if (!env.KV) {
+        return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
+      }
+      const store = new KVStore(env.KV)
+      const user = await store.getUserById(payload.sub)
+
+      if (!user) {
+        return new Response(JSON.stringify({ error: '用户不存在' }), { status: 404 })
+      }
+
+      return new Response(JSON.stringify({
+        id: user.id,
+        username: user.username,
+        email: user.email,
+        is_admin: user.is_admin
+      }), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
+    // 进度相关
+    if (path === '/api/user/progress' && request.method === 'GET') {
+      const authHeader = request.headers.get('Authorization')
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: '未授权' }), { status: 401 })
+      }
+
+      const token = authHeader.substring(7)
+      const payload = await verifyToken(token, JWT_SECRET)
+
+      if (!payload) {
+        return new Response(JSON.stringify({ error: 'Token 无效' }), { status: 401 })
+      }
+
+      // 检查是否有 KV 存储
+      if (!env.KV) {
+        return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
+      }
+      const store = new KVStore(env.KV)
+      const progress = await store.getUserProgress(payload.sub)
+
+      return new Response(JSON.stringify(progress), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
+    if (path === '/api/user/progress' && request.method === 'POST') {
+      const authHeader = request.headers.get('Authorization')
+      if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return new Response(JSON.stringify({ error: '未授权' }), { status: 401 })
+      }
+
+      const token = authHeader.substring(7)
+      const payload = await verifyToken(token, JWT_SECRET)
+
+      if (!payload) {
+        return new Response(JSON.stringify({ error: 'Token 无效' }), { status: 401 })
+      }
+
+      // 检查是否有 KV 存储
+      if (!env.KV) {
+        return new Response(JSON.stringify({ error: 'KV 存储未配置' }), { status: 500 })
+      }
+
+      const body = await request.json()
+      const { chapter_id, completed, score } = body
+
+      const store = new KVStore(env.KV)
+      const progress = await store.updateProgress(payload.sub, chapter_id, {
+        completed,
+        score
+      })
+
+      return new Response(JSON.stringify(progress), {
+        headers: { 'Content-Type': 'application/json' }
+      })
+    }
+
+    // 404
+    return new Response('Not Found', { status: 404 })
+  } catch (error) {
+    console.error('Error:', error)
+    return new Response(JSON.stringify({ error: error.message }), {
+      status: 500,
+      headers: { 'Content-Type': 'application/json' }
+    })
   }
+}
+
+export default function onRequest(context) {
+  return handleRequest(context.request, context.env, context)
+}
+
+export const onRequestGet = async (context) => {
+  return handleRequest(context.request, context.env, context)
+}
+
+export const onRequestPost = async (context) => {
+  return handleRequest(context.request, context.env, context)
+}
+
+export const onRequestPut = async (context) => {
+  return handleRequest(context.request, context.env, context)
+}
+
+export const onRequestDelete = async (context) => {
+  return handleRequest(context.request, context.env, context)
 }
