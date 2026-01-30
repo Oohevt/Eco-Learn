@@ -44,6 +44,7 @@
 import { ref, computed } from 'vue'
 import EChart from './EChart.vue'
 import type { ChartConfig } from '@/types'
+import type { EChartsOption } from 'echarts'
 
 const props = defineProps<{
   config: ChartConfig
@@ -182,7 +183,7 @@ const chartOption = computed(() => {
     }
   }
 
-  return baseOption
+  return baseOption as EChartsOption
 })
 
 const insight = computed(() => {

@@ -49,10 +49,10 @@
               </svg>
             </button>
 
-            <InteractiveChart :config="chartConfigs[activeChart]" />
+            <InteractiveChart :config="chartConfigs[activeChart]!" />
 
             <div class="modal-description">
-              <h4>{{ chartConfigs[activeChart].title }}</h4>
+              <h4>{{ chartConfigs[activeChart]!.title }}</h4>
               <p>{{ getChartDescription(activeChart) }}</p>
             </div>
           </div>
@@ -95,7 +95,8 @@ function getPreviewPath(config: any): string {
   const data = config.series[0]?.data || [[0, 50], [50, 50], [100, 50]]
 
   // Normalize data to 100x60 viewbox
-  const normalized = data.map(([x, y]: [number, number]) => {
+  const normalized = data.map((p: [number, number]) => {
+    const [x, y] = p
     const nx = (x / (config.xAxis?.max || 100)) * 90 + 5
     const ny = 55 - (y / (config.yAxis?.max || 100)) * 50
     return [nx, ny]
@@ -105,7 +106,7 @@ function getPreviewPath(config: any): string {
     return `M ${normalized[0][0]} ${normalized[0][1]}`
   }
 
-  return `M ${normalized.map(p => p.join(',')).join(' L ')}`
+  return `M ${normalized.map((p: number[]) => p.join(',')).join(' L ')}`
 }
 
 onMounted(() => {

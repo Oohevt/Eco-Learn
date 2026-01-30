@@ -14,8 +14,12 @@ class Settings(BaseSettings):
     # Database
     DATABASE_URL: str = "sqlite:///./econolearn.db"
 
-    # CORS
-    BACKEND_CORS_ORIGINS: list[str] = ["http://localhost:5173", "http://localhost:5177"]
+    # CORS（生产环境需要添加 Vercel 域名）
+    BACKEND_CORS_ORIGINS: list[str] = [
+        "http://localhost:5173",
+        "http://localhost:5177",
+        "https://eco-learn.vercel.app",  # 替换为你的 Vercel 域名
+    ]
 
     class Config:
         env_file = ".env"

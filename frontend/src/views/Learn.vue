@@ -76,12 +76,10 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useChapterStore } from '@/stores/chapter'
-import { useAuthStore } from '@/stores/auth'
 import ChapterCard from '@/components/ui/ChapterCard.vue'
 
 const router = useRouter()
 const chapterStore = useChapterStore()
-const authStore = useAuthStore()
 
 const activeCategory = ref<'all' | 'micro' | 'macro' | 'finance'>('all')
 
@@ -89,25 +87,25 @@ const categories = computed(() => {
   const chapters = chapterStore.chapters
   return [
     {
-      key: 'all',
+      key: 'all' as const,
       label: '全部',
       icon: '📚',
       count: chapters.length
     },
     {
-      key: 'micro',
+      key: 'micro' as const,
       label: '微观经济学',
       icon: '🔬',
       count: chapterStore.chaptersByCategory.micro.length
     },
     {
-      key: 'macro',
+      key: 'macro' as const,
       label: '宏观经济学',
       icon: '🌍',
       count: chapterStore.chaptersByCategory.macro.length
     },
     {
-      key: 'finance',
+      key: 'finance' as const,
       label: '金融学',
       icon: '💰',
       count: chapterStore.chaptersByCategory.finance.length

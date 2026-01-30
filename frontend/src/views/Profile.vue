@@ -58,10 +58,10 @@
             :to="`/learn/${chapter.id}`"
             class="bookmark-item"
           >
-            <span class="bookmark-number">{{ chapter.order }}</span>
+            <span class="bookmark-number">{{ chapter!.order }}</span>
             <div class="bookmark-content">
-              <h3 class="bookmark-title">{{ chapter.title }}</h3>
-              <p class="bookmark-desc">{{ chapter.description }}</p>
+              <h3 class="bookmark-title">{{ chapter!.title }}</h3>
+              <p class="bookmark-desc">{{ chapter!.description }}</p>
             </div>
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none" class="bookmark-arrow">
               <path d="M5 10H15M15 10L10 5M15 10L10 15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
@@ -142,8 +142,8 @@ const bookmarks = computed(() => chapterStore.bookmarks)
 const bookmarkList = computed(() => {
   return Array.from(bookmarks.value)
     .map(id => chapterStore.getChapterById(id))
-    .filter(Boolean)
-    .sort((a, b) => a!.order - b!.order)
+    .filter((chapter): chapter is NonNullable<typeof chapter> => chapter !== undefined)
+    .sort((a, b) => a.order - b.order)
 })
 
 function getStatus(chapterId: string) {

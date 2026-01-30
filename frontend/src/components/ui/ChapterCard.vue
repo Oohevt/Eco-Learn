@@ -72,7 +72,7 @@ const progressStatus = computed(() => {
 })
 
 const statusLabel = computed(() => {
-  const labels = {
+  const labels: Record<string, string> = {
     'in-progress': '学习中',
     'completed': '已完成'
   }

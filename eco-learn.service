@@ -1,0 +1,15 @@
+[Unit]
+Description=Eco-Learn FastAPI Backend
+After=network.target
+
+[Service]
+Type=simple
+User=www-data
+WorkingDirectory=/var/www/eco-learn/backend
+Environment="PATH=/var/www/eco-learn/backend/venv/bin"
+ExecStart=/var/www/eco-learn/backend/venv/bin/python run.py
+Restart=always
+RestartSec=10
+
+[Install]
+WantedBy=multi-user.target
