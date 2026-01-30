@@ -119,8 +119,8 @@ echo "   等待隧道建立..."
 sleep 5
 
 # 从日志中提取 URL
-FRONTEND_URL=$(grep -m1 -oE 'https://[a-z0-9\-]+(\.[a-z0-9\-]+)*\.trycloudflare\.com' "$SCRIPT_DIR/.tunnel-frontend.log" 2>/dev/null || echo "")
-BACKEND_URL=$(grep -m1 -oE 'https://[a-z0-9\-]+(\.[a-z0-9\-]+)*\.trycloudflare\.com' "$SCRIPT_DIR/.tunnel-backend.log" 2>/dev/null || echo "")
+FRONTEND_URL=$(grep -m1 -oE 'https://[^[:space:]]+\.trycloudflare\.com' "$SCRIPT_DIR/.tunnel-frontend.log" 2>/dev/null || echo "")
+BACKEND_URL=$(grep -m1 -oE 'https://[^[:space:]]+\.trycloudflare\.com' "$SCRIPT_DIR/.tunnel-backend.log" 2>/dev/null || echo "")
 
 if [ -z "$FRONTEND_URL" ] || [ -z "$BACKEND_URL" ]; then
     echo -e "   ${YELLOW}⚠${NC} 隧道启动超时，请检查日志"

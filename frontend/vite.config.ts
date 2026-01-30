@@ -10,7 +10,7 @@ export default defineConfig({
     }
   },
   server: {
-    allowedHosts: [],
+    allowedHosts: true,
     strictPort: true,
     host: true
   }
