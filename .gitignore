@@ -4,3 +4,19 @@ dist/
 .env
 *.log
 .wrangler/
+
+# EdgeOne Pages
+.edgeone/
+node-functions/
+
+# Local backend 数据库
+*.db
+*.db-shm
+*.db-wal
+
+# Railway
+railway.toml
+
+# Ngrok 二进制文件
+ngrok
+ngrok.zip
