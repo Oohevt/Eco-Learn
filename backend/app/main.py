@@ -1,7 +1,10 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
 
 from app.core.config import settings
 from app.core.database import engine
@@ -35,13 +38,24 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 注册路由
+# 注册 API 路由
 app.include_router(auth_router, prefix=f"{settings.API_V1_STR}/auth", tags=["认证"])
 app.include_router(chapters_router, prefix=f"{settings.API_V1_STR}/chapters", tags=["章节管理"])
 app.include_router(progress_router, prefix=f"{settings.API_V1_STR}/user", tags=["用户数据"])
 
+# 静态文件挂载（必须在 API 路由之后）
+static_dir = Path(__file__).parent.parent / "frontend" / "dist"
+if static_dir.exists():
+    app.mount("/assets", StaticFiles(directory=str(static_dir / "assets")), name="assets")
 
-@app.get("/")
+
+@app.get("/health")
+async def health_check():
+    """健康检查"""
+    return {"status": "healthy"}
+
+
+@app.get("/api")
 async def root():
     """根路径"""
     return {
@@ -51,7 +65,14 @@ async def root():
     }
 
 
-@app.get("/health")
-async def health_check():
-    """健康检查"""
-    return {"status": "healthy"}
+@app.get("/{full_path:path}")
+async def serve_spa(full_path: str):
+    """SPA 路由支持，所有非 API 请求返回 index.html"""
+    static_dir = Path(__file__).parent.parent / "frontend" / "dist"
+    if not static_dir.exists():
+        return {"error": "Frontend not built"}
+    
+    index_file = static_dir / "index.html"
+    if index_file.exists():
+        return FileResponse(str(index_file))
+    return {"error": "index.html not found"}
