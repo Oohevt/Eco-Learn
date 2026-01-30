@@ -104,12 +104,12 @@ fi
 
 # 启动前端隧道
 echo "   启动前端隧道..."
-cloudflared tunnel --url http://localhost:5173 --loglevel error > "$SCRIPT_DIR/.tunnel-frontend.log" 2>&1 &
+cloudflared tunnel --url http://localhost:5173 > "$SCRIPT_DIR/.tunnel-frontend.log" 2>&1 &
 TUNNEL_FRONTEND_PID=$!
 
 # 启动后端隧道
 echo "   启动后端隧道..."
-cloudflared tunnel --url http://localhost:8787 --loglevel error > "$SCRIPT_DIR/.tunnel-backend.log" 2>&1 &
+cloudflared tunnel --url http://localhost:8787 > "$SCRIPT_DIR/.tunnel-backend.log" 2>&1 &
 TUNNEL_BACKEND_PID=$!
 
 TUNNEL_PIDS="$TUNNEL_FRONTEND_PID $TUNNEL_BACKEND_PID"
@@ -119,8 +119,8 @@ echo "   等待隧道建立..."
 sleep 5
 
 # 从日志中提取 URL
-FRONTEND_URL=$(grep -o 'https://.*\.trycloudflare.com' "$SCRIPT_DIR/.tunnel-frontend.log" 2>/dev/null | head -1 || echo "")
-BACKEND_URL=$(grep -o 'https://.*\.trycloudflare.com' "$SCRIPT_DIR/.tunnel-backend.log" 2>/dev/null | head -1 || echo "")
+FRONTEND_URL=$(grep -m1 -oE 'https://[a-z0-9\-]+(\.[a-z0-9\-]+)*\.trycloudflare\.com' "$SCRIPT_DIR/.tunnel-frontend.log" 2>/dev/null || echo "")
+BACKEND_URL=$(grep -m1 -oE 'https://[a-z0-9\-]+(\.[a-z0-9\-]+)*\.trycloudflare\.com' "$SCRIPT_DIR/.tunnel-backend.log" 2>/dev/null || echo "")
 
 if [ -z "$FRONTEND_URL" ] || [ -z "$BACKEND_URL" ]; then
     echo -e "   ${YELLOW}⚠${NC} 隧道启动超时，请检查日志"
