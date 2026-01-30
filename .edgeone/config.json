@@ -3,5 +3,11 @@
   "name": "EconoLearn",
   "env": {
     "JWT_SECRET": "econolearn-jwt-secret-key-2024-production-secure"
-  }
+  },
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "ns-zgaesRm8Wu4B"
+    }
+  ]
 }
