@@ -10,7 +10,7 @@ export default defineConfig({
     }
   },
   server: {
-    allowedHosts: false,  // 完全禁用主机检查
+    allowedHosts: [],
     strictPort: true,
     host: true
   }

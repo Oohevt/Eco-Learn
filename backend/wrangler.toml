@@ -8,8 +8,8 @@ id = "ns-zgaesRm8Wu4B"
 preview_id = "ns-zgaesRm8Wu4B"
 
 [vars]
-ENVIRONMENT = "production"
-JWT_SECRET = "econolearn-jwt-secret-key-2024-production-secure"
+ENVIRONMENT = "development"
+JWT_SECRET = "econolearn-jwt-secret-key-2024-development-secure"
 
 [build]
 command = "npm run build"

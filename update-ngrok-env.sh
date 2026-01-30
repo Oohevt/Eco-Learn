@@ -8,7 +8,7 @@ echo "🔄 自动检测并更新 ngrok 后端域名..."
 NGROK_API_URL="http://127.0.0.1:4040/api/tunnels"
 
 # 尝试从 ngrok API 获取后端隧道信息
-BACKEND_URL=$(curl -s "$NGROROK_API_URL" 2>/dev/null | \
+BACKEND_URL=$(curl -s "$NGROK_API_URL" 2>/dev/null | \
   python3 -c "
 import sys, json
 data = json.load(sys.stdin)
