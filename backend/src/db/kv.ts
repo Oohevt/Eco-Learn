@@ -157,7 +157,7 @@ export class KVStore {
   }
 
   async getCategoryStats(): Promise<Array<{ category: string; name: string; count: number }>> {
-    const chapters = await this.listChapters(null, true)
+    const chapters = await this.listChapters(undefined, true)
     const stats = [
       { category: 'micro', name: '微观经济学', count: 0 },
       { category: 'macro', name: '宏观经济学', count: 0 },

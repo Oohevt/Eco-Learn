@@ -2,8 +2,9 @@ import { Hono } from 'hono'
 import { zValidator } from '@hono/zod-validator'
 import { ChapterSchema, ChapterUpdateSchema } from '../schemas/chapter.js'
 import { adminMiddleware } from '../middleware/auth.js'
+import type { Env, Variables } from '../types/index.js'
 
-const chapters = new Hono<{ Bindings: any }>()
+const chapters = new Hono<{ Bindings: Env; Variables: Variables }>()
 
 chapters.get('/stats', async (c) => {
   const db = c.get('db')

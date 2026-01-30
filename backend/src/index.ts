@@ -2,12 +2,13 @@ import { Hono } from 'hono'
 import { cors } from 'hono/cors'
 import { KVStore } from './db/kv.js'
 import { hashPassword } from './utils/jwt.js'
-import { initData } from './scripts/init-data.js'
+// import { initData } from './scripts/init-data.js'
 import auth from './routes/auth.js'
 import chapters from './routes/chapters.js'
 import user from './routes/user.js'
+import type { Env, Variables } from './types/index.js'
 
-const app = new Hono<{ Bindings: any }>()
+const app = new Hono<{ Bindings: Env; Variables: Variables }>()
 
 app.use('*', cors({
   origin: '*',
@@ -32,14 +33,15 @@ app.get('/api', (c) => {
   })
 })
 
-app.post('/init-data', async (c) => {
-  try {
-    await initData(c.env.KV)
-    return c.json({ message: '数据初始化完成', success: true })
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500)
-  }
-})
+// 数据初始化端点（暂时禁用）
+// app.post('/init-data', async (c) => {
+//   try {
+//     await initData(c.env.KV)
+//     return c.json({ message: '数据初始化完成', success: true })
+//   } catch (error: any) {
+//     return c.json({ error: error.message }, 500)
+//   }
+// })
 
 app.post('/init-admin', async (c) => {
   try {

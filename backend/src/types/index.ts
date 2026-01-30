@@ -4,6 +4,11 @@ export interface Env {
   ENVIRONMENT: string
 }
 
+export interface Variables {
+  db: import('../db/kv.js').KVStore
+  userId?: string
+}
+
 export interface User {
   id: string
   username: string

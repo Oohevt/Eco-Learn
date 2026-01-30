@@ -3,8 +3,9 @@ import { zValidator } from '@hono/zod-validator'
 import { RegisterSchema, LoginSchema } from '../schemas/auth.js'
 import { hashPassword, verifyPassword, createToken } from '../utils/jwt.js'
 import { authMiddleware } from '../middleware/auth.js'
+import type { Env, Variables } from '../types/index.js'
 
-const auth = new Hono<{ Bindings: any }>()
+const auth = new Hono<{ Bindings: Env; Variables: Variables }>()
 
 auth.post('/register', zValidator('json', RegisterSchema), async (c) => {
   const db = c.get('db')
@@ -50,7 +51,7 @@ auth.post('/login', zValidator('json', LoginSchema), async (c) => {
 
 auth.get('/me', authMiddleware, async (c) => {
   const db = c.get('db')
-  const userId = c.get('userId')
+  const userId = c.get('userId')!
   const user = await db.getUserById(userId)
 
   if (!user) {

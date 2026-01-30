@@ -1,11 +1,12 @@
-import { subtle } from 'crypto'
+// Cloudflare Workers 环境中 crypto.subtle 是全局可用的
+declare const crypto: Crypto
 
 const TOKEN_EXPIRY = 7 * 24 * 60 * 60
 
 export async function hashPassword(password: string): Promise<string> {
   const encoder = new TextEncoder()
   const data = encoder.encode(password)
-  const hash = await subtle.digest('SHA-256', data)
+  const hash = await crypto.subtle.digest('SHA-256', data)
   return Array.from(new Uint8Array(hash))
     .map(b => b.toString(16).padStart(2, '0'))
     .join('')
@@ -33,7 +34,7 @@ export async function createToken(userId: string, secret: string): Promise<strin
   const payloadEncoded = btoa(JSON.stringify(payload))
 
   const signatureInput = `${headerEncoded}.${payloadEncoded}`
-  const key = await subtle.importKey(
+  const key = await crypto.subtle.importKey(
     'raw',
     encoder.encode(secret),
     { name: 'HMAC', hash: 'SHA-256' },
@@ -41,7 +42,7 @@ export async function createToken(userId: string, secret: string): Promise<strin
     ['sign']
   )
 
-  const signature = await subtle.sign(
+  const signature = await crypto.subtle.sign(
     'HMAC',
     key,
     encoder.encode(signatureInput)
@@ -68,7 +69,7 @@ export async function verifyToken(token: string, secret: string): Promise<any> {
     }
 
     const signatureInput = `${headerEncoded}.${payloadEncoded}`
-    const key = await subtle.importKey(
+    const key = await crypto.subtle.importKey(
       'raw',
       encoder.encode(secret),
       { name: 'HMAC', hash: 'SHA-256' },
@@ -77,7 +78,7 @@ export async function verifyToken(token: string, secret: string): Promise<any> {
     )
 
     const signature = Uint8Array.from(atob(signatureEncoded), c => c.charCodeAt(0))
-    const isValid = await subtle.verify(
+    const isValid = await crypto.subtle.verify(
       'HMAC',
       key,
       signature,
