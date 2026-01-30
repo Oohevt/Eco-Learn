@@ -4,12 +4,12 @@ compatibility_date = "2024-01-01"
 
 [[kv_namespaces]]
 binding = "KV"
-id = "YOUR_KV_NAMESPACE_ID"
-preview_id = "YOUR_PREVIEW_KV_NAMESPACE_ID"
+id = "ns-zgaesRm8Wu4B"
+preview_id = "ns-zgaesRm8Wu4B"
 
 [vars]
 ENVIRONMENT = "production"
-JWT_SECRET = "change-this-to-a-random-secret-in-production"
+JWT_SECRET = "econolearn-jwt-secret-key-2024-production-secure"
 
 [build]
 command = "npm run build"
