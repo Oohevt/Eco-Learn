@@ -18,6 +18,13 @@ app.use('*', cors({
 app.use('*', async (c, next) => {
   const db = new KVStore(c.env.KV)
   c.set('db', db)
+
+  // 自动初始化数据（仅在第一次启动时）
+  const initialized = await c.env.KV.get('system:initialized')
+  if (!initialized) {
+    await initData(c.env.KV)
+  }
+
   await next()
 })
 
