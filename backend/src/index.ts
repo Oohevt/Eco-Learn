@@ -10,6 +10,9 @@ import type { Env, Variables } from './types/index.js'
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>()
 
+// 内存标记，避免重复检查
+let isInitialized = false
+
 app.use('*', cors({
   origin: '*',
   credentials: true
@@ -18,17 +21,22 @@ app.use('*', cors({
 app.use('*', async (c, next) => {
   const db = new KVStore(c.env.KV)
   c.set('db', db)
-
-  // 自动初始化数据（仅在第一次启动时）
-  const initialized = await c.env.KV.get('system:initialized')
-  if (!initialized) {
-    await initData(c.env.KV)
-  }
-
   await next()
 })
 
-app.get('/health', (c) => {
+// 在 /health 端点触发初始化（服务启动时自动调用）
+app.get('/health', async (c) => {
+  // 后台自动初始化数据
+  if (!isInitialized) {
+    const initialized = await c.env.KV.get('system:initialized')
+    if (!initialized) {
+      console.log('Auto-initializing data...')
+      await initData(c.env.KV)
+      isInitialized = true
+    } else {
+      isInitialized = true
+    }
+  }
   return c.json({ status: 'healthy' })
 })
 
@@ -40,10 +48,11 @@ app.get('/api', (c) => {
   })
 })
 
-// 数据初始化端点
+// 数据初始化端点（手动触发）
 app.post('/init-data', async (c) => {
   try {
     await initData(c.env.KV)
+    isInitialized = true
     return c.json({ message: '数据初始化完成', success: true })
   } catch (error: any) {
     return c.json({ error: error.message }, 500)

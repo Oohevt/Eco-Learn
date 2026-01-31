@@ -69,12 +69,18 @@ export const useChapterStore = defineStore('chapter', () => {
 
   // Actions
   async function fetchChapters() {
+    // 如果已有数据且不为空，直接返回（缓存）
+    if (chapters.value.length > 0 && !isLoading.value) {
+      return
+    }
+
     if (isLoading.value) return
 
     isLoading.value = true
     try {
       const response = await chapterApi.getChapters()
       chapters.value = response.data.items.map(transformChapter)
+      isInitialized.value = true
     } catch (error) {
       console.error('Failed to fetch chapters:', error)
       // 如果未登录，使用空数组

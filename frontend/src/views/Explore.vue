@@ -63,10 +63,14 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, defineAsyncComponent, onMounted } from 'vue'
 import { useRoute } from 'vue-router'
-import InteractiveChart from '@/components/ui/InteractiveChart.vue'
 import { chartConfigs } from '@/api/chart'
+
+// 懒加载图表组件，减少初始加载时间
+const InteractiveChart = defineAsyncComponent(() =>
+  import('@/components/ui/InteractiveChart.vue')
+)
 
 const route = useRoute()
 const activeChart = ref<string | null>(null)
