@@ -1,22 +1,29 @@
+# General
 .DS_Store
 node_modules/
 dist/
 .env
+
+# Logs
 *.log
 .wrangler/
 
-# EdgeOne Pages
+# Tunnel logs
+.tunnel-*.log
+.backend.log
+.frontend.log
+
+# EdgeOne Pages (已弃用)
 .edgeone/
 node-functions/
 
-# Local backend 数据库
+# Railway (已弃用)
+railway.toml
+
+# Local backend (已弃用)
+local-backend/
+
+# Local database (已弃用，改用 KV)
 *.db
 *.db-shm
 *.db-wal
-
-# Railway
-railway.toml
-
-# Ngrok 二进制文件
-ngrok
-ngrok.zip
